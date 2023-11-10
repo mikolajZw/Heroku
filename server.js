@@ -14,6 +14,10 @@ app.post('/', (req, res) => {
   // Store the data in the array
   arduinoData.push(data);
 
+  if (arduinoData.length > 10) {
+    arduinoData.shift();
+  }
+    
   // Respond to the Arduino with success
   res.json({ success: true });
 });
