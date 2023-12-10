@@ -26,7 +26,7 @@ const filePath = `${dataFolder}${parameter.toLowerCase()}.json`;
 const existingData = fs.existsSync(filePath) ?
 JSON.parse(fs.readFileSync(filePath)) : [];
 // Add new data entry
-existingData.push({ timestamp: getFormattedTimestamp(), value: data[parameter] });
+existingData.push({ timestamp: Date.now(), value: data[parameter] });
 
 // Write the updated data back to the file
 fs.writeFileSync(filePath, JSON.stringify(existingData));
