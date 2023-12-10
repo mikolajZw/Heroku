@@ -80,7 +80,7 @@ app.get('/getData/:parameter/:duration', (req, res) => {
         const data = fs.existsSync(filePath) ?
             JSON.parse(fs.readFileSync(filePath)) : [];
 
-        // Filter data based on the requested time range (e.g., last hour,last day, last 3 days)
+        // Filter data based on the requested time range (e.g., last hour, last day, last 3 days)
         const filteredData = filterDataByDuration(data, duration);
 
         res.json({ [requestedParameter]: filteredData.map(entry => ({
@@ -96,8 +96,9 @@ function filterDataByDuration(data, duration) {
     const currentTime = Date.now();
     const timeThreshold = getTimeThreshold(duration);
 
-    return data.filter(entry => entry.timestamp >= currentTime - timeThreshold);
+    return data.filter(entry => currentTime - entry.timestamp <= timeThreshold);
 }
+
 
 function getTimeThreshold(duration) {
     switch (duration) {
