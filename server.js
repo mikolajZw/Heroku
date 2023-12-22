@@ -1,48 +1,54 @@
-const express = require('express');
+//Inicjalizacja serwera Express
+
+
+const express = require('express'); 
 const app = express();
 const port = process.env.PORT || 3000;
+
+
+//obsługa plików
+
+
 const fs = require('fs');
 const dataFolder = './data/';
-
-// Array to store received data
 const arduinoData = [];
 
+//Obsługa przesyłanych danych:
 app.use(express.json());
+
+//Zapisywanie danych do plików:
 
 function saveDataToFile(data) {
 Object.keys(data).forEach(parameter => {
 const filePath = `${dataFolder}${parameter.toLowerCase()}.json`;
-
-// Read existing data or create an empty array
+//odczyt danych
 const existingData = fs.existsSync(filePath) ?
 JSON.parse(fs.readFileSync(filePath)) : [];
-// Add new data entry
 existingData.push({ timestamp: Date.now(), value: data[parameter] });
-
-// Write the updated data back to the file
 fs.writeFileSync(filePath, JSON.stringify(existingData));
 });
 }
 
 app.post('/', (req, res) => {
 const data = req.body;
-
-// Store the data in the array
 arduinoData.push(data);
-
 if (arduinoData.length > 10) {
 arduinoData.shift();
 }
-
-// Save data to individual files
 saveDataToFile(data);
-
-// Respond to the Arduino with success
 res.json({ success: true });
 });
+
+
+//Pobieranie wszystkich danych
+
+
 app.get('/getData/', (req, res) => {
 res.json({ arduinoData });
 });
+
+//Pobieranie danych dla konkretnego parametru
+
 
 app.get('/getData/:parameter', (req, res) => {
 const requestedParameter = req.params.parameter;
@@ -56,18 +62,17 @@ res.status(400).json({ error: 'Invalid parameter' });
 }
 });
 
+//Pobieranie danych z określonym okresem czasu:
+
 app.get('/getData/:parameter/:duration', (req, res) => {
 const requestedParameter = req.params.parameter;
 const duration = req.params.duration;
-
 if (isValidParameter(requestedParameter)) {
 const filePath = `${dataFolder}${requestedParameter.toLowerCase()}.json`;
 const data = fs.existsSync(filePath) ?
 JSON.parse(fs.readFileSync(filePath)) : [];
-
-// Filter data based on the requested time range (e.g., last hour,last day, last 3 days)
+//Filtry danych czasowych:
 const filteredData = filterDataByDuration(data, duration);
-
 res.json({ [requestedParameter]: filteredData });
 } else {
 res.status(400).json({ error: 'Invalid parameter' });
@@ -77,31 +82,32 @@ res.status(400).json({ error: 'Invalid parameter' });
 function filterDataByDuration(data, duration) {
 const currentTime = Date.now();
 const timeThreshold = getTimeThreshold(duration);
-
 return data.filter(entry => entry.timestamp >= currentTime - timeThreshold);
 }
 
 function getTimeThreshold(duration) {
 switch (duration) {
 case 'hour':
-return 60 * 60 * 1000; // 1 hour in milliseconds
+return 60 * 60 * 1000; // 1 godzina w milisekundach
 case 'day':
-return 24 * 60 * 60 * 1000; // 1 day in milliseconds
+return 24 * 60 * 60 * 1000; // 1 dzień w milisekundach
 case '3days':
-return 3 * 24 * 60 * 60 * 1000; // 3 days in milliseconds
+return 3 * 24 * 60 * 60 * 1000; // 3 dni w milisekundach
 default:
 return 0;
 }
 }
 
+//Sprawdzanie poprawności parametru
 
 function isValidParameter(parameter) {
-// Add more parameters as needed
 const validParameters = ['Temperature', 'Pressure', 'Light', 'PM25',
 'PM10', 'PM1', 'Humidity', 'eTVOC', 'eCO2'];
 return validParameters.some(validParam => validParam.toLowerCase() ===
 parameter.toLowerCase());
 }
+
+//Nasłuchiwanie na określonym porcie
 
 app.listen(port, () => {
 console.log(`Server is running on port ${port}`);
